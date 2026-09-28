@@ -1494,3 +1494,94 @@ async fn a_login_cannot_be_started_without_an_admin_session() {
         .unwrap();
     assert_eq!(res.status(), 401);
 }
+
+// ---------------------------------------------------------------------------
+// The canary
+// ---------------------------------------------------------------------------
+
+#[tokio::test]
+async fn the_canary_asks_every_codex_seat_a_question_from_the_pool() {
+    let mock = MockProvider::spawn().await;
+    let dir = tempfile::tempdir().unwrap();
+    let keys: Vec<String> = ["acct-a", "acct-b"]
+        .iter()
+        .map(|account| {
+            let path = dir.path().join(format!("{account}.json"));
+            std::fs::write(&path, codex_auth_json_for(4_000_000_000, account)).unwrap();
+            format!(
+                r#"{{ name = "{account}", value = "file:{}" }}"#,
+                path.display()
+            )
+        })
+        .collect();
+    let config = Config::from_str_with_env(
+        &format!(
+            r#"
+[providers.codex]
+type = "codex_subscription"
+base_url = "{base}"
+codex = {{ version = "0.199.0", reasoning_effort = "medium" }}
+keys = [{keys}]
+
+[console]
+admin_keys = ["probe-test-key"]
+"#,
+            base = mock.base_url(),
+            keys = keys.join(", "),
+        ),
+        Format::Toml,
+        &NoEnv,
+    )
+    .unwrap();
+    let state = AppState::new(config);
+    state.spawn_canary(std::time::Duration::from_millis(200));
+    let app = build_router(state.clone());
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let url = format!("http://{}", listener.local_addr().unwrap());
+    tokio::spawn(async move {
+        router_server::serve(listener, state, app, std::future::pending())
+            .await
+            .unwrap()
+    });
+
+    // A few ticks: every seat asked, none of them twice at once.
+    tokio::time::sleep(std::time::Duration::from_millis(900)).await;
+
+    let hit = accounts_hit(&mock);
+    for account in ["acct-a", "acct-b"] {
+        assert!(
+            hit.iter().any(|a| a == account),
+            "{account} was asked: {hit:?}"
+        );
+    }
+    let questions = router_server::canary::questions();
+    for request in mock.requests() {
+        let asked = request.body.to_string();
+        assert!(
+            questions
+                .iter()
+                .any(|q| asked.contains(&q[..40.min(q.len())])),
+            "every question comes from the pool: {asked}"
+        );
+    }
+
+    let report: Value = reqwest::Client::new()
+        .get(format!("{url}/admin/api/canary"))
+        .bearer_auth("probe-test-key")
+        .send()
+        .await
+        .unwrap()
+        .json()
+        .await
+        .unwrap();
+    assert_eq!(report["enabled"], true, "{report}");
+    assert_eq!(report["questions"], 100, "{report}");
+    assert_eq!(report["seats"], 2, "{report}");
+    for row in report["results"].as_array().unwrap() {
+        assert!(row["ok"].as_u64().unwrap() >= 1, "{row}");
+        assert_eq!(row["failed"], 0, "{row}");
+        assert_eq!(row["last"]["status"], "ok", "{row}");
+        assert_eq!(row["last"]["answer_preview"], "Hello from Codex", "{row}");
+        assert!(row["p50_ms"].is_u64(), "{row}");
+    }
+}

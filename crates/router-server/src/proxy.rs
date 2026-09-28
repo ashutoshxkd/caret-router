@@ -1782,6 +1782,42 @@ pub(crate) async fn probe_key(
     key_name: &str,
     model: &str,
 ) -> ProbeOutcome {
+    ask_key(state, provider, key_name, model, "hi", Some(1)).await
+}
+
+/// Put one real question to a named credential and report what came
+/// back — the check above with a prompt of the caller's choosing.
+///
+/// Everything a check does happens here too (breaker, bench, recorded
+/// outcome), because the canary is a check that also wants to know how
+/// long the seat took and what it said. `max_tokens` is `None` for an
+/// uncapped answer; the Codex backend drops it either way.
+pub(crate) async fn ask_key(
+    state: &AppState,
+    provider: Arc<router_core::router::ProviderRuntime>,
+    key_name: &str,
+    model: &str,
+    prompt: &str,
+    max_tokens: Option<u32>,
+) -> ProbeOutcome {
+    let started = Instant::now();
+    let mut outcome = ask_key_inner(
+        state, provider, key_name, model, prompt, max_tokens, started,
+    )
+    .await;
+    outcome.total_ms = started.elapsed().as_millis() as u64;
+    outcome
+}
+
+async fn ask_key_inner(
+    state: &AppState,
+    provider: Arc<router_core::router::ProviderRuntime>,
+    key_name: &str,
+    model: &str,
+    prompt: &str,
+    max_tokens: Option<u32>,
+    started: Instant,
+) -> ProbeOutcome {
     let route = ResolvedRoute {
         provider: provider.clone(),
         upstream_model: model.to_owned(),
@@ -1792,6 +1828,7 @@ pub(crate) async fn probe_key(
             status: "unreachable".into(),
             detail: format!("`{}` has no wire dialect to probe", provider.name),
             http_status: None,
+            ..ProbeOutcome::default()
         };
     };
     // Built by the same function real traffic goes through, so what the
@@ -1802,12 +1839,15 @@ pub(crate) async fn probe_key(
     // at its own path and nothing else — so a probe asked both for
     // something they never serve, and every seat came back 403 however
     // valid and in-quota it was.
-    let probe: ChatRequest = serde_json::from_value(serde_json::json!({
+    let mut request_json = serde_json::json!({
         "model": model,
-        "max_tokens": 1,
-        "messages": [{ "role": "user", "content": "hi" }],
-    }))
-    .expect("the probe request builds");
+        "messages": [{ "role": "user", "content": prompt }],
+    });
+    if let Some(max_tokens) = max_tokens {
+        request_json["max_tokens"] = serde_json::json!(max_tokens);
+    }
+    let probe: ChatRequest =
+        serde_json::from_value(request_json).expect("the probe request builds");
     let built = match router_providers::build_outbound(
         dialect,
         &probe,
@@ -1822,6 +1862,7 @@ pub(crate) async fn probe_key(
                 status: "unreachable".into(),
                 detail: err.to_string(),
                 http_status: None,
+                ..ProbeOutcome::default()
             };
         }
     };
@@ -1842,6 +1883,7 @@ pub(crate) async fn probe_key(
                 status: "unreachable".into(),
                 detail: err.to_string(),
                 http_status: None,
+                ..ProbeOutcome::default()
             };
         }
     };
@@ -1869,9 +1911,13 @@ pub(crate) async fn probe_key(
                 status: "unreachable".into(),
                 detail: err.to_string(),
                 http_status: None,
+                ..ProbeOutcome::default()
             }
         }
         Ok(response) => {
+            let headers_ms = started.elapsed().as_millis() as u64;
+            let mut answer = None;
+            let mut output_tokens = None;
             let http_status = response.status();
             let headers = response.headers().clone();
             // Record the windows exactly as a real response would, and
@@ -1915,7 +1961,16 @@ pub(crate) async fn probe_key(
                     .await
                     .unwrap_or_default();
                 match router_providers::subscription::aggregate_sse(&body, model) {
-                    Ok(_) => ("ok", String::new()),
+                    Ok(value) => {
+                        answer = value
+                            .pointer("/choices/0/message/content")
+                            .and_then(Value::as_str)
+                            .map(str::to_owned);
+                        output_tokens = value
+                            .pointer("/usage/completion_tokens")
+                            .and_then(Value::as_u64);
+                        ("ok", String::new())
+                    }
                     Err(failure) => {
                         hold_out_refused_seat(&provider, breaker, key, &failure);
                         (
@@ -1944,6 +1999,10 @@ pub(crate) async fn probe_key(
                 status: status.into(),
                 detail,
                 http_status: Some(http_status.as_u16()),
+                answer,
+                output_tokens,
+                headers_ms: Some(headers_ms),
+                total_ms: 0,
             }
         }
     }
@@ -1963,10 +2022,18 @@ fn check_status(status: http::StatusCode) -> &'static str {
 }
 
 /// What a probe learned about one credential.
+#[derive(Default)]
 pub(crate) struct ProbeOutcome {
     pub status: String,
     pub detail: String,
     pub http_status: Option<u16>,
+    /// The seat's answer, when it gave one and the dialect was read.
+    pub answer: Option<String>,
+    pub output_tokens: Option<u64>,
+    /// Until the upstream's response headers arrived.
+    pub headers_ms: Option<u64>,
+    /// Until the whole answer was in.
+    pub total_ms: u64,
 }
 
 pub async fn handle_relay(

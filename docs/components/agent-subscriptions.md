@@ -437,6 +437,41 @@ build.
   before rotating; transport failures (truncated SSE, read timeout) →
   **retryable**, because `store: false` makes re-issuing safe.
 
+### 3.4a The canary
+
+A check asks a seat for one token of "hi", which proves the credential and
+little else: a seat can pass it and still stall, truncate or refuse a real
+turn. The canary asks **every Codex seat** a question that needs a detailed
+answer, on a fixed beat, and keeps what it learns.
+
+```bash
+rapid-router --canary-interval-secs 5      # or RAPID_CANARY_INTERVAL_SECS=5
+curl -H "Authorization: Bearer $ADMIN_KEY" http://localhost:8080/admin/api/canary
+```
+
+- **Questions** are the 100 lines of
+  [`canary_questions.txt`](../../crates/router-server/src/canary_questions.txt),
+  one picked at random per ask. Edit the file to change them.
+- **One question per seat at a time.** A seat still answering when the next
+  tick lands is skipped for that tick. Starts are spread across the interval
+  rather than fired together.
+- **Benched seats are not asked.** They are counted as `benched` until their
+  quota window rolls.
+- **It is real traffic to the seat.** Each ask goes through the check's own
+  path, so it settles the breaker and the seat's recorded state as a check
+  does, and it spends the seat's plan quota. Every seat every five seconds
+  with detailed answers is a lot of quota; widen the interval if seats start
+  benching on it.
+- **Per node.** Every node started with the flag runs its own canary, so in
+  a fleet set it on one node.
+- **What it reports:** per seat, how many asks succeeded and failed, p50/p95
+  answer time over the last 50 answers, and the last question with its
+  status, time to headers, total time, answer length, output tokens and the
+  first 400 characters of the answer. Also as Prometheus
+  `rapid_canary_total{provider,key,status}` and
+  `rapid_canary_duration_seconds{provider,key}`, and one `canary answer` log
+  line per ask. Canary asks are not written to request history or usage.
+
 ### 3.5 What we deliberately do not build
 
 - **No agent CLI transport.** Not for Claude (§2 removes the need), and not
@@ -525,6 +560,7 @@ Stated up front because the failure mode is a surprised operator:
 | Deadline benching in the breaker | [`router-core/src/breaker.rs`](../../crates/router-core/src/breaker.rs) |
 | Headers, request shaping, stream translation | [`router-providers/src/subscription.rs`](../../crates/router-providers/src/subscription.rs) |
 | OAuth renewal, atomic write-back, single-flight | [`router-server/src/refresh.rs`](../../crates/router-server/src/refresh.rs) |
+| The canary: a detailed question to every Codex seat | [`router-server/src/canary.rs`](../../crates/router-server/src/canary.rs) |
 | End-to-end behaviour | [`router-server/tests/e2e_subscriptions.rs`](../../crates/router-server/tests/e2e_subscriptions.rs) |
 
 ## See also

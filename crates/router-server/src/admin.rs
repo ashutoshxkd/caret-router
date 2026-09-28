@@ -44,6 +44,7 @@ pub fn router(state: Arc<AppState>) -> Router<Arc<AppState>> {
             post(add_provider_keys).delete(delete_provider_keys),
         )
         .route("/providers/{name}/probe", post(probe_provider))
+        .route("/canary", get(canary_report))
         .route("/providers/{name}/models", post(add_model))
         .route(
             "/providers/{name}/models/{model}",
@@ -1655,6 +1656,12 @@ async fn probe_provider(
         }
     }
     Json(json!({ "results": results })).into_response()
+}
+
+/// What the canary has learned about each Codex seat: success rate,
+/// latency percentiles and the last question and answer.
+async fn canary_report(State(state): State<Arc<AppState>>) -> Response {
+    Json(state.canary.report()).into_response()
 }
 
 /// Mint a one-time code so an operator can sign a dead seat back in.

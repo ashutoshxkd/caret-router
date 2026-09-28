@@ -1,0 +1,106 @@
+# Questions the canary puts to Codex seats, one per line.
+#
+# Each asks for a detailed answer on purpose: a seat that can say "hi"
+# can still stall, truncate or refuse on a real turn, and a long answer
+# is what exposes that. Lines starting with `#` and blank lines are
+# ignored. Nothing here should need the web, a file or a tool.
+Explain in detail how a hash map handles collisions, comparing separate chaining with open addressing, and when you would pick each.
+Walk through what happens, step by step, from typing a URL into a browser to the page rendering, covering DNS, TCP, TLS and HTTP.
+Explain the CAP theorem with a concrete example of a system that chooses consistency and one that chooses availability.
+Describe how garbage collection works in a generational collector, including why most objects die young and how write barriers help.
+Explain the differences between processes and threads, and how an operating system schedules them, with examples.
+Write a Python function that merges overlapping intervals, then explain its time and space complexity and the edge cases it handles.
+Explain how Rust's ownership and borrowing rules prevent data races, with a short code example that fails to compile and the fix.
+Describe how a B-tree index speeds up database queries and why it suits disks better than a binary search tree.
+Explain how TLS 1.3 establishes a secure connection, including the key exchange and why it needs fewer round trips than TLS 1.2.
+Compare REST, GraphQL and gRPC for an internal microservice API, with the trade-offs of each in detail.
+Explain eventual consistency and describe three techniques distributed databases use to converge replicas.
+Write a SQL query that finds the second highest salary in each department, then explain how it works and an alternative approach.
+Explain how a circuit breaker pattern works in distributed systems, including its states and how it recovers.
+Describe the lifecycle of a Kubernetes pod from scheduling to termination, including probes and graceful shutdown.
+Explain what a race condition is, give a realistic example in a web application, and describe three ways to prevent it.
+Explain how public-key cryptography works using RSA as an example, including key generation, encryption and signing.
+Describe how you would design a URL shortener that handles 10,000 writes per second, covering storage, ID generation and caching.
+Explain the difference between optimistic and pessimistic locking, with an example of when each is the better choice.
+Walk through how Git stores commits, trees and blobs, and explain what actually happens during a rebase.
+Explain how async/await works under the hood in an event-loop runtime, and why blocking calls inside async code are harmful.
+Describe the SOLID principles of object-oriented design, with a short example of violating and then following each one.
+Explain how a load balancer distributes traffic, comparing round robin, least connections and consistent hashing.
+Write a function that detects a cycle in a linked list, explain Floyd's algorithm, and prove why the pointers must meet.
+Explain how rate limiting with a token bucket works and how it differs from a sliding window counter.
+Describe how you would debug a memory leak in a long-running server process, step by step.
+Explain what idempotency means for HTTP APIs and how to implement idempotent payment requests safely.
+Describe how message queues such as Kafka guarantee ordering and delivery, and what "exactly once" really means there.
+Explain the difference between unit, integration and end-to-end tests, and how to balance them in a real project.
+Explain how a compiler turns source code into machine code, covering lexing, parsing, optimisation and code generation.
+Describe how DNS resolution works, including recursive resolvers, root servers, TTLs and caching.
+Explain how photosynthesis works, covering the light-dependent reactions and the Calvin cycle in detail.
+Describe how vaccines train the immune system, comparing live attenuated, inactivated and mRNA vaccines.
+Explain the causes of the First World War, distinguishing long-term causes from the immediate trigger.
+Explain how the human heart pumps blood, describing each chamber, the valves and the electrical conduction system.
+Describe how plate tectonics shapes the Earth's surface, including the three types of plate boundaries and their features.
+Explain how inflation is measured and the main tools a central bank uses to control it.
+Describe the water cycle in detail, including evaporation, condensation, precipitation and groundwater flow.
+Explain how the Industrial Revolution changed work, cities and family life in nineteenth-century Britain.
+Explain the theory of evolution by natural selection, with two well-documented examples observed in nature.
+Describe how a nuclear power plant generates electricity and the main safety systems it relies on.
+Explain how the stock market works, including what determines a share's price and the role of market makers.
+Describe the structure of DNA and explain how it is replicated before a cell divides.
+Explain the main causes and effects of climate change, and compare mitigation with adaptation strategies.
+Explain how an airplane wing generates lift, and why the common "equal transit time" explanation is wrong.
+Describe how the Roman Republic became the Roman Empire, including the key people and events.
+Explain how the kidneys filter blood and regulate fluid and electrolyte balance.
+Describe how supply and demand determine prices, with an example of a price ceiling and its consequences.
+Explain how black holes form and what happens at the event horizon, in terms a curious student could follow.
+Explain how antibiotics work, why resistance develops, and what can be done to slow it.
+Describe the main differences between the Renaissance and the Middle Ages in art, science and thought.
+Explain the purpose of ICD-10-CM and CPT code sets in US medical billing and how they are used together on a claim.
+Describe the lifecycle of a medical claim from patient visit to payment, including where denials usually happen.
+Explain what an evaluation and management (E/M) visit level is and the factors used to choose one under the 2021 guidelines.
+Explain the difference between a primary and a secondary diagnosis, and why their order matters on a claim.
+Describe the common reasons insurance claims are denied and how a billing team can prevent each.
+Explain what HIPAA requires for protecting patient information, covering the Privacy Rule and the Security Rule.
+Explain what NCCI edits are and how they affect which procedure codes can be billed together.
+Describe how modifiers work in CPT coding, with examples of modifiers 25, 59 and 26 and when each applies.
+Explain the difference between inpatient and outpatient coding, including the systems used for each.
+Explain what risk adjustment and HCC coding are, and why accurate chronic condition coding matters to payers.
+Explain the time value of money and walk through calculating the present value of a series of future payments.
+Describe how compound interest works, with a worked example comparing monthly and yearly compounding.
+Explain the Monty Hall problem and prove, with probabilities, why switching doors is the better strategy.
+Walk through solving the quadratic equation 2x^2 - 7x + 3 = 0 in three different ways, explaining each step.
+Explain Bayes' theorem with a worked example about a medical test with a false positive rate.
+Explain what a derivative is, intuitively and formally, and work through the derivative of x^3 * sin(x).
+Prove that the square root of 2 is irrational, explaining each step of the argument.
+Explain the central limit theorem and why it matters for statistics, with a concrete example.
+Describe how Dijkstra's algorithm finds shortest paths, walk through it on a small graph, and explain its complexity.
+Explain the difference between correlation and causation, with three examples where confusing them misleads.
+Plan a seven-day itinerary for a first visit to Japan, balancing cities, culture and travel time, with reasons for each choice.
+Explain how to prepare for a technical job interview over four weeks, with a week-by-week plan.
+Describe how to write a good incident postmortem, including its sections and how to keep it blameless.
+Explain how to run an effective one-on-one meeting as a new engineering manager, with sample questions.
+Describe how to structure a persuasive business proposal, section by section, with what each should contain.
+Explain how to learn a new programming language efficiently, with a plan for the first month.
+Describe how to evaluate whether a startup idea is worth pursuing, using concrete questions and signals.
+Explain how to give constructive feedback to a colleague, with a worked example of a difficult conversation.
+Describe how to plan a small-team software project from requirements to release, including risks to watch.
+Explain how to design a good onboarding process for new employees in their first 90 days.
+Summarise the plot and main themes of Shakespeare's Hamlet, and explain why the play is still widely studied.
+Explain the difference between machine learning, deep learning and artificial intelligence, with examples of each.
+Describe how a transformer neural network works, including attention, positional encoding and training.
+Explain overfitting in machine learning, how to detect it, and five techniques to reduce it.
+Describe how a recommendation system works, comparing collaborative filtering with content-based filtering.
+Explain what gradient descent is, how the learning rate affects it, and the differences between SGD, momentum and Adam.
+Explain how precision, recall and F1 score are calculated and when each is the right metric to optimise.
+Describe how large language models are evaluated, including benchmarks, human evaluation and their limitations.
+Explain what retrieval-augmented generation is, how it works, and the common ways it fails.
+Describe the main ethical risks of deploying AI in healthcare and how organisations can mitigate them.
+Explain how an electric motor works, covering magnetic fields, the commutator and the difference between AC and DC motors.
+Describe how a refrigerator moves heat from inside to outside, step by step through the refrigeration cycle.
+Explain how GPS determines your position, including why it needs signals from at least four satellites and relativity corrections.
+Describe how solar panels convert sunlight into electricity and the main factors that limit their efficiency.
+Explain how the internet routes a packet across the world, covering IP addressing, BGP and autonomous systems.
+Describe how a car's internal combustion engine works through its four strokes, and how a hybrid differs.
+Explain how noise-cancelling headphones work and why they handle low-frequency noise better than speech.
+Describe how a search engine crawls, indexes and ranks web pages, in detail.
+Explain how credit card payments are authorised and settled, naming each party involved and their role.
+Describe how you would design a notification system that sends email, SMS and push messages reliably at scale.

@@ -2,6 +2,7 @@
 //! serving.
 
 mod admin;
+pub mod canary;
 #[cfg(feature = "console")]
 mod console;
 pub mod device_login;
@@ -110,6 +111,8 @@ pub struct AppState {
     pub refreshes: refresh::RefreshRegistry,
     /// Device-code logins an operator has started from the console.
     pub logins: device_login::DeviceLoginRegistry,
+    /// What the canary has learned about each Codex seat.
+    pub canary: canary::CanaryRegistry,
     draining: AtomicBool,
     prometheus: PrometheusHandle,
 }
@@ -189,6 +192,7 @@ impl AppState {
             upstream: upstream::UpstreamClient::new(),
             refreshes: refresh::RefreshRegistry::default(),
             logins: device_login::DeviceLoginRegistry::default(),
+            canary: canary::CanaryRegistry::default(),
             draining: AtomicBool::new(false),
             prometheus: prometheus_handle().clone(),
         })
@@ -383,6 +387,12 @@ impl AppState {
                 tokio::time::sleep(Duration::from_secs(24 * 60 * 60)).await;
             }
         });
+    }
+
+    /// Ask every Codex seat a real question each `interval`. See
+    /// [`canary`].
+    pub fn spawn_canary(self: &Arc<Self>, interval: Duration) {
+        canary::spawn(self.clone(), interval);
     }
 
     /// Keep every subscription seat's credential fresh, off the request

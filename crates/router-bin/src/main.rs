@@ -81,6 +81,13 @@ struct Cli {
     #[arg(long)]
     dev: bool,
 
+    /// Ask every Codex seat a detailed question this often, in seconds,
+    /// to watch availability and answer times (`GET /admin/api/canary`). Off
+    /// when absent or 0. Each node runs its own, so in a fleet set it on
+    /// one node only.
+    #[arg(long, global = true, env = "RAPID_CANARY_INTERVAL_SECS")]
+    canary_interval_secs: Option<u64>,
+
     #[command(subcommand)]
     command: Option<Command>,
 }
@@ -856,6 +863,9 @@ fn run(cli: Cli) -> ExitCode {
         // Subscription credentials are renewed on their own beat rather
         // than only when a request happens to need one.
         state.spawn_seat_maintenance(Duration::from_secs(60));
+        if let Some(secs) = cli.canary_interval_secs.filter(|secs| *secs > 0) {
+            state.spawn_canary(Duration::from_secs(secs));
+        }
         state.spawn_heartbeat(
             Duration::from_secs(tuning.heartbeat_interval_secs),
             Duration::from_secs(tuning.liveness_window_secs),
